@@ -1,4 +1,5 @@
 import os
+import subprocess
 import time
 from typing import Any, Optional
 
@@ -92,7 +93,7 @@ def test_start_job_in_container(client):
         json={
             "job_id": "test-job-1",
             "input_params": {
-                "input_file": "data/test/input/test_clip.mkv",
+                "input_file": "data/test/input/test_clip_1.mkv",
                 "output_dir": "data/test/output",
             },
         },
@@ -111,7 +112,7 @@ def test_get_job_returns_running(client):
         json={
             "job_id": "running-job",
             "input_params": {
-                "input_file": "data/test/input/test_clip.mkv",
+                "input_file": "data/test/input/test_clip_1.mkv",
                 "output_dir": "data/test/output/2",
             },
         },
@@ -129,7 +130,7 @@ def test_get_job_returns_running(client):
 def test_job_with_input_params(client):
     """Test POST /job with input_params stores and returns them."""
     input_params = {
-        "input_file": "data/test/input/test_clip.mkv",
+        "input_file": "data/test/input/test_clip_1.mkv",
         "output_dir": "data/test/output/params",
     }
     response = client.post(
@@ -151,7 +152,7 @@ def test_cannot_start_job_while_running(client):
         json={
             "job_id": "first-job",
             "input_params": {
-                "input_file": "data/test/input/test_clip.mkv",
+                "input_file": "data/test/input/test_clip_1.mkv",
                 "output_dir": "data/test/output/3",
             },
         },
@@ -162,7 +163,7 @@ def test_cannot_start_job_while_running(client):
         json={
             "job_id": "second-job",
             "input_params": {
-                "input_file": "data/test/input/test_clip.mkv",
+                "input_file": "data/test/input/test_clip_1.mkv",
                 "output_dir": "data/test/output/4",
             },
         },
@@ -178,7 +179,7 @@ def test_cancel_running_job(client):
         json={
             "job_id": "cancel-job",
             "input_params": {
-                "input_file": "data/test/input/test_clip.mkv",
+                "input_file": "data/test/input/test_clip_1.mkv",
                 "output_dir": "data/test/output/5",
             },
         },
@@ -207,7 +208,7 @@ def test_cancel_completed_job(client):
         json={
             "job_id": "already-done",
             "input_params": {
-                "input_file": "data/test/input/test_clip.mkv",
+                "input_file": "data/test/input/test_clip_1.mkv",
                 "output_dir": "data/test/output/6",
             },
         },
@@ -217,3 +218,81 @@ def test_cancel_completed_job(client):
 
     response = client.post("/job/cancel")
     assert response.status_code == 400
+
+
+def get_video_fps(video_path: str) -> float:
+    """Get the FPS of a video file using ffprobe."""
+    result = subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "stream=r_frame_rate",
+            "-of",
+            "json",
+            video_path,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    import json
+
+    output = json.loads(result.stdout)
+    fps_str = output["streams"][0]["r_frame_rate"]
+    if "/" in fps_str:
+        num, den = fps_str.split("/")
+        return float(num) / float(den)
+    return float(fps_str)
+
+
+def test_roundtrip_extract_and_compose(client):
+    """Test extracting frames and composing them back preserves FPS."""
+    original_video = "/app/data/test/input/test_clip_1.mkv"
+    extract_dir = "data/test/output/roundtrip_frames"
+    composed_video = "data/test/output/roundtrip_composed.mp4"
+
+    original_fps = get_video_fps(original_video)
+
+    extract_response = client.post(
+        "job",
+        json={
+            "job_id": "roundtrip-extract",
+            "job_type": "extract",
+            "input_params": {
+                "input_file": "data/test/input/test_clip_1.mkv",
+                "output_dir": extract_dir,
+            },
+        },
+    )
+    assert extract_response.status_code == 200
+
+    extract_job = wait_for_job_completion(client, "roundtrip-extract")
+    assert extract_job is not None
+    assert extract_job["status"] == "completed"
+    assert extract_job["result"]["frame_count"] > 0
+
+    compose_response = client.post(
+        "job",
+        json={
+            "job_id": "roundtrip-compose",
+            "job_type": "compose",
+            "input_params": {
+                "input_dir": extract_dir,
+                "output_file": composed_video,
+            },
+        },
+    )
+    assert compose_response.status_code == 200
+
+    compose_job = wait_for_job_completion(client, "roundtrip-compose")
+    assert compose_job is not None
+    assert compose_job["status"] == "completed"
+
+    composed_fps = get_video_fps("/app/data/" + composed_video)
+
+    assert composed_fps == original_fps, (
+        f"FPS mismatch: original={original_fps}, composed={composed_fps}"
+    )
