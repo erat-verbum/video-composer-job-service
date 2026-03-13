@@ -18,7 +18,7 @@ class HealthCheckResponse(BaseModel):
     status: HealthStatus
     message: str
     timestamp: str
-    service_name: str = "video-composer-job-service"
+    service_name: str = "video-processing-job-service"
 
 
 class JobStatus(str, Enum):

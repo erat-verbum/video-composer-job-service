@@ -122,7 +122,7 @@ The job accepts these input parameters:
       "status": "healthy|unhealthy|degraded",
       "message": "string",
       "timestamp": "ISO timestamp",
-      "service_name": "video-composer-job-service"
+      "service_name": "video-processing-job-service"
     }
     ```
 
