@@ -6,7 +6,7 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      - SERVICE_NAME=${SERVICE_NAME:-ffmpeg-service}
+      - SERVICE_NAME=${SERVICE_NAME:-video-composer-job-service}
       - HOST=${HOST:-0.0.0.0}
       - PORT=${PORT:-8001}
     healthcheck:

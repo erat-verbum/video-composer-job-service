@@ -105,22 +105,6 @@ service-name/
   - `test__<name_of_file_being_tested>.py` for simple cases where the file contains tests for a single feature
   - `test__<name_of_file_being_tested>__<name_of_feature_being_tested>.py` when the file would become too large or contain tests for multiple distinct features
 
-## Development Workflow
-
-1. **Clarify requirements**: Ask clarifying questions of the user to understand the task fully.
-2. **Plan the approach**: Create/update a TODO list to outline the steps needed to complete the task.
-3. **Research**: Use context7 to look up how libraries work when needed for the task.
-4. **Implement**: Make targeted, small changes, one-by-one to ensure quality and avoid errors.
-5. **Verify**: Read the modified files to ensure the changes are correct.
-6. **Lint and Type Check**: Run linting (`make lint`) and type checking (`make check`) to ensure code quality.
-7. **Test**: Run tests to verify functionality. Then run tests (`make test` for all, `make test-unit`/`make test-int` for specific types).
-8. **Complete**: Do not stop until all tasks on the TODO list are completed and verified.
-
-## Rules of Engagement
-
-1. Think incredibly hard and long before getting to the Implement step, writing lots and lots, considering all possible options and then choosing the right one
-2. Be concise specifically when responding to the user that a task has been completed
-
 ## Input Parameters
 
 The job accepts these input parameters:
@@ -138,7 +122,7 @@ The job accepts these input parameters:
       "status": "healthy|unhealthy|degraded",
       "message": "string",
       "timestamp": "ISO timestamp",
-      "service_name": "ffmpeg-service"
+      "service_name": "video-composer-job-service"
     }
     ```
 

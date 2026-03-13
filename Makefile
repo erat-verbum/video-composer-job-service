@@ -1,4 +1,8 @@
-.PHONY: install lint check test test-unit test-int run run-cli
+.PHONY: install lint check test test-unit test-int run run-cli data-clean
+
+data-clean:
+	rm -rf data/*/
+	rm -f data/*
 
 install:
 	uv venv --clear
@@ -28,10 +32,10 @@ run-cli:
 	uv run python -m src.cli run
 
 docker-build:
-	docker build -t ffmpeg-service .
+	docker build -t video-composer-job-service .
 
 docker-run:
-	docker run -p 8001:8001 ffmpeg-service
+	docker run -p 8001:8001 video-composer-job-service
 
 up:
 	docker-compose up -d

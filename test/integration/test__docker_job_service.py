@@ -11,13 +11,13 @@ POLL_INTERVAL = 0.5
 POLL_TIMEOUT = 5
 
 
-def is_ffmpeg_service(client: httpx.Client) -> bool:
-    """Check if the service is the ffmpeg-service."""
+def is_video_composer_job_service(client: httpx.Client) -> bool:
+    """Check if the service is the video-composer-job-service."""
     try:
         response = client.get("/health")
         if response.status_code == 200:
             data = response.json()
-            return data.get("service_name") == "ffmpeg-service"
+            return data.get("service_name") == "video-composer-job-service"
     except Exception:
         pass
     return False
@@ -30,9 +30,9 @@ def client():
 
 @pytest.fixture(autouse=True)
 def check_service(client):
-    """Skip tests if not running ffmpeg-service."""
-    if not is_ffmpeg_service(client):
-        pytest.skip("Not running ffmpeg-service container")
+    """Skip tests if not running video-composer-job-service."""
+    if not is_video_composer_job_service(client):
+        pytest.skip("Not running video-composer-job-service container")
     yield
 
 
@@ -72,7 +72,7 @@ def test_health_check_in_container(client):
     data = response.json()
     assert data["status"] == "healthy"
     assert "timestamp" in data
-    assert data["service_name"] == "ffmpeg-service"
+    assert data["service_name"] == "video-composer-job-service"
 
 
 def test_get_job_empty_in_container(client):

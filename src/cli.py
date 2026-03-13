@@ -10,7 +10,7 @@ from .job_runner import JobRunner
 from .models import JobStatus
 
 app = typer.Typer(
-    name="ffmpeg-service",
+    name="video-composer-job-service",
     help="CLI for extracting video frames without Docker",
 )
 console = Console()
@@ -161,7 +161,7 @@ def run(
 
     Example:
 
-        ffmpeg-service run -i video.mp4 -o output_frames
+        video-composer-job-service run -i video.mp4 -o output_frames
     """
     import uuid
 
