@@ -296,3 +296,105 @@ def test_roundtrip_extract_and_compose(client):
     assert composed_fps == original_fps, (
         f"FPS mismatch: original={original_fps}, composed={composed_fps}"
     )
+
+
+def test_rotated_video_roundtrip(client):
+    """Test extracting and composing a rotated video preserves correct dimensions."""
+    rotated_video = "data/test/input/test_clip_3.mkv"
+    extract_dir = "data/test/output/rotated_frames"
+    composed_video = "data/test/output/rotated_composed.mp4"
+
+    result = subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "stream=width,height",
+            "-of",
+            "json",
+            "/app/data/" + rotated_video,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    import json
+
+    rotated_info = json.loads(result.stdout)
+    rotated_width = rotated_info["streams"][0]["width"]
+    rotated_height = rotated_info["streams"][0]["height"]
+
+    assert rotated_width == 576
+    assert rotated_height == 720
+
+    extract_response = client.post(
+        "job",
+        json={
+            "job_id": "rotated-extract",
+            "job_type": "extract",
+            "input_params": {
+                "input_file": rotated_video,
+                "output_dir": extract_dir,
+            },
+        },
+    )
+    assert extract_response.status_code == 200
+
+    extract_job = wait_for_job_completion(client, "rotated-extract")
+    assert extract_job is not None
+    assert extract_job["status"] == "completed"
+    assert extract_job["result"]["frame_count"] > 0
+
+    metadata_response = client.get("/job")
+    assert metadata_response.status_code == 200
+
+    metadata_file = "/app/" + extract_dir + "/metadata.json"
+    with open(metadata_file) as f:
+        metadata = json.load(f)
+
+    assert metadata["width"] == 576
+    assert metadata["height"] == 720
+    assert metadata["display_width"] == 720
+    assert metadata["display_height"] == 576
+
+    compose_response = client.post(
+        "job",
+        json={
+            "job_id": "rotated-compose",
+            "job_type": "compose",
+            "input_params": {
+                "input_dir": extract_dir,
+                "output_file": composed_video,
+            },
+        },
+    )
+    assert compose_response.status_code == 200
+
+    compose_job = wait_for_job_completion(client, "rotated-compose")
+    assert compose_job is not None
+    assert compose_job["status"] == "completed"
+
+    result = subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "stream=width,height",
+            "-of",
+            "json",
+            "/app/data/" + composed_video,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    composed_info = json.loads(result.stdout)
+    composed_width = composed_info["streams"][0]["width"]
+    composed_height = composed_info["streams"][0]["height"]
+
+    assert composed_width == 720, f"Expected width 720, got {composed_width}"
+    assert composed_height == 576, f"Expected height 576, got {composed_height}"
