@@ -4,17 +4,27 @@ FastAPI service for extracting and composing video frames using FFmpeg.
 
 ## Features
 
-- FastAPI-based REST API
-- Job management (start, status, cancel)
-- Single job at a time (returns 409 Conflict if a job is already running)
-- Progress tracking
-- Health check endpoint
-- Pydantic models for data validation
-- Docker support
-- Unit and integration tests
-- Pre-commit hook (runs lint, type check, and unit tests on commit)
-- Audio track extraction and preservation
-- Subtitle track extraction and preservation
+### Extract Job
+- Extracts frames from a video to PNG images
+- Saves metadata (resolution, frame rate, duration, etc.) for reconstitution
+- Extracts all audio tracks to separate files
+  - Preserves original format: aac, mp3, ac3, flac, opus, ogg, wav, m4a, etc.
+- Extracts all subtitle tracks to separate files
+  - Preserves original format: srt, ass, vtt
+- Output:
+  - PNG frames
+  - metadata.json
+  - audio_*.{ext} files
+  - subtitle_*.{ext} files
+
+### Compose Job
+- Creates a video from PNG frames using saved metadata
+- Re-muxes all extracted audio tracks into the output video
+  - Preserves original formats
+- Re-muxes all extracted subtitle tracks into the output video
+  - Preserves original formats
+- Output:
+  - Reconstructed video file with all original audio/subtitle tracks
 
 ## Quick Start
 
