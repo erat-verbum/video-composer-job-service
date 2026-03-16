@@ -17,6 +17,8 @@ class TestMetadataExtraction:
             fps=30.0,
             width=1920,
             height=1080,
+            display_width=1920,
+            display_height=1080,
             codec="h264",
             duration_seconds=10.5,
         )
@@ -31,6 +33,8 @@ class TestMetadataExtraction:
         assert data["fps"] == 30.0
         assert data["width"] == 1920
         assert data["height"] == 1080
+        assert data["display_width"] == 1920
+        assert data["display_height"] == 1080
         assert data["codec"] == "h264"
         assert data["duration_seconds"] == 10.5
 
@@ -40,6 +44,8 @@ class TestMetadataExtraction:
             fps=24.0,
             width=1280,
             height=720,
+            display_width=1280,
+            display_height=720,
             codec="hevc",
             duration_seconds=60.0,
         )

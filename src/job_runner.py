@@ -85,6 +85,8 @@ class JobRunner:
             [
                 "-map",
                 "0:v",
+                "-vf",
+                f"scale={metadata.display_width}:{metadata.display_height}",
                 output_pattern,
             ]
         )
@@ -309,7 +311,7 @@ class JobRunner:
             "-select_streams",
             "v:0",
             "-show_entries",
-            "stream=r_frame_rate,width,height,codec_name,duration",
+            "stream=r_frame_rate,width,height,codec_name,duration,sample_aspect_ratio,rotation",
             "-of",
             "json",
             str(video_path),
@@ -352,6 +354,25 @@ class JobRunner:
         codec = stream.get("codec_name", "unknown")
         duration = float(stream.get("duration", 0.0))
 
+        sar_str = stream.get("sample_aspect_ratio", "1:1")
+        if ":" in sar_str:
+            sar_num, sar_den = sar_str.split(":")
+            sar = float(sar_num) / float(sar_den)
+        else:
+            sar = float(sar_str)
+
+        rotation = int(stream.get("rotation", 0))
+
+        if rotation in (90, -90, 270, -270):
+            display_width = height
+            display_height = round(width * sar)
+        else:
+            display_width = round(width * sar)
+            display_height = height
+
+        display_width = (display_width // 2) * 2
+        display_height = (display_height // 2) * 2
+
         audio_tracks = await self._extract_audio_streams(video_path)
         subtitle_tracks = await self._extract_subtitle_streams(video_path)
 
@@ -359,6 +380,8 @@ class JobRunner:
             fps=fps,
             width=width,
             height=height,
+            display_width=display_width,
+            display_height=display_height,
             codec=codec,
             duration_seconds=duration,
             audio_tracks=audio_tracks,

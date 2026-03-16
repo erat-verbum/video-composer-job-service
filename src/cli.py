@@ -75,6 +75,8 @@ class CliJobRunner(JobRunner):
             "-y",
             "-map",
             "0:v",
+            "-vf",
+            f"scale={metadata.display_width}:{metadata.display_height}",
             output_pattern,
         ]
 

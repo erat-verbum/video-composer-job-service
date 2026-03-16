@@ -61,6 +61,8 @@ class VideoMetadata(BaseModel):
     fps: float
     width: int
     height: int
+    display_width: int
+    display_height: int
     codec: str
     duration_seconds: float
     audio_tracks: list[AudioTrack] = []
