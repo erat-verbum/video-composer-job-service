@@ -1,4 +1,5 @@
 import json
+from typing import Any, cast
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -263,7 +264,9 @@ class TestExtractValidation:
         )
 
         with pytest.raises(ValueError, match="input_file and output_dir are required"):
-            await runner._extract_frames(runner._job_ref["input_params"])
+            await runner._extract_frames(
+                cast(dict[str, Any], runner._job_ref)["input_params"]
+            )
 
     @pytest.mark.asyncio
     async def test_extract_requires_output_dir(self):
@@ -274,7 +277,9 @@ class TestExtractValidation:
         )
 
         with pytest.raises(ValueError, match="input_file and output_dir are required"):
-            await runner._extract_frames(runner._job_ref["input_params"])
+            await runner._extract_frames(
+                cast(dict[str, Any], runner._job_ref)["input_params"]
+            )
 
 
 class TestComposeValidation:
@@ -289,7 +294,9 @@ class TestComposeValidation:
         )
 
         with pytest.raises(ValueError, match="input_dir and output_file are required"):
-            await runner._compose_frames(runner._job_ref["input_params"])
+            await runner._compose_frames(
+                cast(dict[str, Any], runner._job_ref)["input_params"]
+            )
 
     @pytest.mark.asyncio
     async def test_compose_requires_output_file(self):
@@ -300,7 +307,9 @@ class TestComposeValidation:
         )
 
         with pytest.raises(ValueError, match="input_dir and output_file are required"):
-            await runner._compose_frames(runner._job_ref["input_params"])
+            await runner._compose_frames(
+                cast(dict[str, Any], runner._job_ref)["input_params"]
+            )
 
     @pytest.mark.asyncio
     async def test_compose_fails_if_metadata_missing(self, tmp_path):
@@ -320,4 +329,6 @@ class TestComposeValidation:
         )
 
         with pytest.raises(ValueError, match="Metadata file not found"):
-            await runner._compose_frames(runner._job_ref["input_params"])
+            await runner._compose_frames(
+                cast(dict[str, Any], runner._job_ref)["input_params"]
+            )
