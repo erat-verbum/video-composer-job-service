@@ -16,7 +16,7 @@ FastAPI service for extracting and composing video frames using FFmpeg.
   - Preserves original format: `aac`, `mp3`, `ac3`, `flac`, `opus`, `ogg`, `wav`, `m4a`, etc.
 - Extracts all subtitle tracks to separate files
   - Text formats: `srt`, `ass`, `ssa`, `vtt`, `webvtt`, etc. (preserved as-is)
-  - Bitmap formats: `dvd_subtitle`, `dvbsub`, `hdmv_pgs_subtitle`, `vobsub` (extracted to `.sub` + `.idx` files)
+  - Bitmap formats: `dvd_subtitle`, `vobsub` (extracted to `.sub` + `.idx` files), `dvbsub`, `hdmv_pgs_subtitle` (extracted to `.sup` files)
   - Other text formats (jacosub, microdvd, mpl2, etc.) converted to `srt`
 - Output:
   - `frame/` directory with `PNG` frames

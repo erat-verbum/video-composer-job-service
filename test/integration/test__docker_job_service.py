@@ -506,6 +506,115 @@ def test_auto_crop_detects_and_applies_black_bar_crop(client):
     )
 
 
+def test_bitmap_subtitle_roundtrip(client):
+    """Test that bitmap subtitles (DVD subtitles) are correctly preserved in roundtrip."""
+    original_video = "test/input/test_clip_1.mkv"
+    extract_dir = "test/output/bitmap_subtitle_frames"
+    composed_video = "test/output/bitmap_subtitle_composed.mp4"
+
+    result = subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "s",
+            "-show_entries",
+            "stream=index,codec_name",
+            "-of",
+            "json",
+            "/home/nelson/Development/video-processing-job-service/data/"
+            + original_video,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    import json
+
+    original_subtitle_info = json.loads(result.stdout)
+    original_subtitle_streams = original_subtitle_info.get("streams", [])
+    assert len(original_subtitle_streams) > 0, (
+        "Original video should have subtitle streams"
+    )
+    original_codec = original_subtitle_streams[0]["codec_name"]
+    assert original_codec == "dvd_subtitle", (
+        f"Expected dvd_subtitle, got {original_codec}"
+    )
+
+    extract_response = client.post(
+        "job",
+        json={
+            "job_id": "bitmap-subtitle-extract",
+            "job_type": "extract",
+            "input_params": {
+                "input_file": original_video,
+                "output_dir": extract_dir,
+            },
+        },
+    )
+    assert extract_response.status_code == 200
+
+    extract_job = wait_for_job_completion(client, "bitmap-subtitle-extract")
+    assert extract_job is not None
+    assert extract_job["status"] == "completed"
+    assert extract_job["result"]["subtitle_track_count"] >= 1
+
+    subtitle_files = sorted((DATA_PATH / extract_dir / "subtitle").glob("subtitle_*"))
+    assert len(subtitle_files) > 0, "No subtitle files extracted"
+    subtitle_file = subtitle_files[0]
+    assert subtitle_file.suffix in (".sub", ".idx"), (
+        f"Expected .sub or .idx file, got {subtitle_file.suffix}"
+    )
+
+    metadata_file = str(DATA_PATH / extract_dir / "metadata.json")
+    with open(metadata_file) as f:
+        metadata = json.load(f)
+
+    assert len(metadata["subtitle_tracks"]) >= 1
+    extracted_track = metadata["subtitle_tracks"][0]
+    assert extracted_track["codec"] == "dvd_subtitle"
+
+    compose_response = client.post(
+        "job",
+        json={
+            "job_id": "bitmap-subtitle-compose",
+            "job_type": "compose",
+            "input_params": {
+                "input_dir": extract_dir,
+                "output_file": composed_video,
+            },
+        },
+    )
+    assert compose_response.status_code == 200
+
+    compose_job = wait_for_job_completion(client, "bitmap-subtitle-compose")
+    assert compose_job is not None
+    assert compose_job["status"] == "completed"
+
+    composed_result = subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "s",
+            "-show_entries",
+            "stream=index,codec_name",
+            "-of",
+            "json",
+            "/home/nelson/Development/video-processing-job-service/data/"
+            + composed_video,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    composed_subtitle_info = json.loads(composed_result.stdout)
+    composed_subtitle_streams = composed_subtitle_info.get("streams", [])
+    assert len(composed_subtitle_streams) >= 1, (
+        f"Composed video should have at least 1 subtitle stream, got {len(composed_subtitle_streams)}"
+    )
+
+
 def test_auto_crop_disabled_keeps_original_dimensions(client):
     """Test that auto_crop=false does not crop black bars."""
     video_with_black_bars = "test/input/test_clip_2.mkv"

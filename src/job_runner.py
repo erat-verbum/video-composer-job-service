@@ -235,13 +235,20 @@ class JobRunner:
             "hdmv_pgs_subtitle",
             "vobsub",
         }
+        bitmap_codec_to_ext = {
+            "dvbsub": "sup",
+            "dvd_subtitle": "sub",
+            "hdmv_pgs_subtitle": "sup",
+            "vobsub": "sub",
+        }
         subtitle_dir = output_path / "subtitle"
         subtitle_dir.mkdir(exist_ok=True)
         for track in metadata.subtitle_tracks:
             if track.codec not in bitmap_subtitle_codecs:
                 continue
             try:
-                output_file = subtitle_dir / f"subtitle_{track.stream_index}.sub"
+                ext = bitmap_codec_to_ext.get(track.codec, "sub")
+                output_file = subtitle_dir / f"subtitle_{track.stream_index}.{ext}"
                 result = subprocess.run(
                     [
                         "mkvextract",
@@ -325,7 +332,7 @@ class JobRunner:
             audio_files.extend(sorted(input_path.glob(f"audio/audio_*.{ext}")))
         audio_files.sort()
 
-        subtitle_extensions = ["srt", "ass", "vtt"]
+        subtitle_extensions = ["srt", "ass", "vtt", "sub", "sup"]
         subtitle_files = []
         for ext in subtitle_extensions:
             subtitle_files.extend(sorted(input_path.glob(f"subtitle/subtitle_*.{ext}")))
